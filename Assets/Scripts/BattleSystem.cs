@@ -1,71 +1,84 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
 
 public class BattleSystem : MonoBehaviour
 {
-    private enum EmBattleState
+    private enum EmBattleTurn
     {
-        emWait, //wait for player
-        emAct,
+        emUnknown,
+        emPlayerTeam,
+        emEnemyTeam,
     }
 
+    public enum EmBattleTeam
+    {
+        emPlayer,
+        emEnemy,
+    }
+
+    #region [인스펙터 변수]
     [SerializeField]
     private Transform traPlayerPos = null;
 
     [SerializeField]
     private Transform traEnemyPos = null;
 
+    [SerializeField]
+    public TextMeshProUGUI textTimer = null;
+
+    //추후 수정(데이터를 받아오는 것으로).    
     public Sprite sprite2DPlayer = null;
     public Sprite sprite2DEnemy = null;
+    #endregion
 
-    //
-    private EmBattleState _emBattleState;
+    private EmBattleTurn _emBattleState = EmBattleTurn.emUnknown;
+
     private BattleCharacter _player = null;
     private BattleCharacter _enemy = null;
     private BattleCharacter _battleCharacter = null;
 
+    private Coroutine _coroutineTimer = null;
+    private float _fBattleTimer = 180f; //3분.
+
+    private bool _bSetting = false;
+
     private void Start()
     {
-        SpawnCharacter(UEnum.EmBattleTeam.emPlayer, (character) =>
+        Init();
+    }
+
+    private void Init()
+    {
+        SpawnCharacter(EmBattleTeam.emPlayer, (character) =>
         {
             _player = character;
             SetActiveBattleCharacter(_player);
         });
 
-        SpawnCharacter(UEnum.EmBattleTeam.emEnemy, (character) =>
+        SpawnCharacter(EmBattleTeam.emEnemy, (character) =>
         {
             _enemy = character;
         });
 
-        _emBattleState = EmBattleState.emWait;
+        _emBattleState = EmBattleTurn.emPlayerTeam;
+
+        StartBattle();
     }
 
-    private void Update()
-    {
-        if (_emBattleState == EmBattleState.emWait)
-        {
-            if (Input.GetKeyDown(KeyCode.Space))
-            {
-                _emBattleState = EmBattleState.emAct;
-                _player.Attack(_enemy, () => SetNextBattleCharacter());
-            }
-        }
-    }
-
-    private void SpawnCharacter(UEnum.EmBattleTeam emTeam, Action<BattleCharacter> onActHandelerT)
+    private void SpawnCharacter(EmBattleTeam emTeam, Action<BattleCharacter> onComplete)
     {
         string strTeam = string.Empty;
         Transform traPos = null;
 
         switch (emTeam)
         {
-            case UEnum.EmBattleTeam.emPlayer:
+            case EmBattleTeam.emPlayer:
                 strTeam = "Player";
                 traPos = traPlayerPos;
                 break;
-            case UEnum.EmBattleTeam.emEnemy:
+            case EmBattleTeam.emEnemy:
                 strTeam = "Enemy";
                 traPos = traEnemyPos;
                 break;
@@ -75,14 +88,63 @@ public class BattleSystem : MonoBehaviour
         {
             BattleCharacter battleCharacter = go.transform.GetComponent<BattleCharacter>();
             battleCharacter.Setup(emTeam);
-            onActHandelerT?.Invoke(battleCharacter);
+            onComplete?.Invoke(battleCharacter);
+            _bSetting = true;
         });
     }
 
+    private void StartBattle()
+    {
+        StartCoroutine(BattleLoopCoroutine());
+    }
+
+    private IEnumerator BattleLoopCoroutine()
+    {
+        //Spawn 후 Setting 완료될 때까지 대기.
+        while (!_bSetting)
+        {
+            yield return null;
+        }
+
+        //타이머 업데이트.
+        UpdateTimer();
+
+        //자동 전투.
+        AutoBattle();
+    }
+
+    private void AutoBattle()
+    {
+        //시작은 Player Team부터.
+        _player.TakeTurn(_enemy, () => TakeNextTurn());
+    }
+
+    private void TakeNextTurn()
+    {
+        if (IsBattleOver())
+        {
+            StopTimer();
+            return;
+        }
+
+        if (_battleCharacter == _player)
+        {
+            _emBattleState = EmBattleTurn.emEnemyTeam;
+            SetActiveBattleCharacter(_enemy);
+            _enemy.TakeTurn(_player, () => TakeNextTurn());
+        }
+        else
+        {
+            _emBattleState = EmBattleTurn.emPlayerTeam;
+            SetActiveBattleCharacter(_player);
+            _player.TakeTurn(_enemy, () => TakeNextTurn());
+        }
+    }
+
     /// <summary>
-    /// 현재 공격중인 캐릭터.
+    /// 현재 공격중인 캐릭터 설정.
     /// </summary>
-    /// <param name="battleCharacter"></param>
+    /// <param name="battleCharacter">현재턴</param>
     private void SetActiveBattleCharacter(BattleCharacter battleCharacter)
     {
         if (_battleCharacter != null)
@@ -92,41 +154,61 @@ public class BattleSystem : MonoBehaviour
         _battleCharacter.SetActiveSelection(true);
     }
 
-    private void SetNextBattleCharacter()
+    private void UpdateTimer()
     {
-        //Test.
-        if (IsBattleOver_Test()) return;
+        _coroutineTimer = StartCoroutine(TimerCoroutine());
+    }
 
-        if (_battleCharacter == _player)
+    private IEnumerator TimerCoroutine()
+    {
+        while (true)
         {
-            SetActiveBattleCharacter(_enemy);
-            _emBattleState = EmBattleState.emAct;
-            _enemy.Attack(_player, () => SetNextBattleCharacter());
-        }
-        else
-        {
-            SetActiveBattleCharacter(_player);
-            _emBattleState = EmBattleState.emWait;
+            int nMin = Mathf.FloorToInt(_fBattleTimer / 60);
+            int nSec = Mathf.FloorToInt(_fBattleTimer % 60);
+            textTimer.text = string.Format("{0:00}:{1:00}", nMin, nSec);
+
+            _fBattleTimer -= Time.deltaTime;
+
+            yield return null;
         }
     }
 
-    //Test.
-    private bool IsBattleOver_Test()
+    private void StopTimer()
+    {
+        if (_coroutineTimer != null)
+        {
+            StopCoroutine(_coroutineTimer);
+            _coroutineTimer = null;
+        }
+
+        _fBattleTimer = 60.0f;
+    }
+
+    private bool IsBattleOver()
     {
         if (_player.IsDead())
         {
-            //player dead, enemy win
             Debug.Log("Enemy Win!!");
             return true;
         }
 
         if (_enemy.IsDead())
         {
-            //enemy dead, player win
             Debug.Log("Player Win!!");
             return true;
         }
 
+        if (IsTimeOver())
+        {
+            Debug.Log("Timer is Over!! Player Lose!!");
+            return true;
+        }
+
         return false;
+    }
+
+    private bool IsTimeOver()
+    {
+        return _fBattleTimer <= 0;
     }
 }

@@ -2,7 +2,7 @@ using System;
 
 public class HPSystem
 {
-    public event Action onHpChanged = null;
+    public event Action<float> onHpChanged = null;
     public event Action onDead = null;
 
     private int _nMaxHp = 0;
@@ -24,7 +24,7 @@ public class HPSystem
         if (_nHp < 0)
             _nHp = 0;
 
-        onHpChanged?.Invoke();
+        onHpChanged?.Invoke((float)_nHp / (float)_nMaxHp);
 
         if (_nHp <= 0)
             Die();

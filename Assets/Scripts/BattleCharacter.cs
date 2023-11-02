@@ -1,10 +1,7 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 
-public class BattleCharacter : MonoBehaviour
+public class BattleCharacter : BaseCharacter
 {
     private enum EmState
     {
@@ -14,17 +11,17 @@ public class BattleCharacter : MonoBehaviour
     }
 
     [SerializeField]
-    private BaseCharacter baseCharacter = null;
+    private GameObject goTurn = null;
 
     [SerializeField]
-    private GameObject goSelection = null; //공격죽인 캐릭터 표시.
+    private Transform traHpBar = null;
 
-    //
     private EmState _emState = default;
-    private Vector3 _vec3TargetPos = Vector3.zero;
-    private Action _onMoveComplete = null;
-    private bool _bPlayerTeam = false;
+
     private HPSystem _hpSystem = null;
+    private UIHpBar _uiHpBar = null;
+
+    private bool _bPlayerTeam = false;
 
     private void Awake()
     {
@@ -54,58 +51,55 @@ public class BattleCharacter : MonoBehaviour
         }
     }
 
-    public bool IsDead() { return _hpSystem.IsDead(); }
-
-    public Vector3 GetPosition()
+    private Vector3 GetPosition()
     {
         return transform.position;
     }
 
     public void SetActiveSelection(bool bActive)
     {
-        goSelection.SetActive(bActive);
+        goTurn.SetActive(bActive);
     }
 
-    public void Setup(UEnum.EmBattleTeam emTeam)
+    public void Setup(BattleSystem.EmBattleTeam emTeam)
     {
         switch (emTeam)
         {
-            case UEnum.EmBattleTeam.emPlayer:
+            case BattleSystem.EmBattleTeam.emPlayer:
                 _bPlayerTeam = true;
 
-                baseCharacter.SetAnim1();
+                SetAnim1();
                 //baseCharacter.SetSprite(BattleSystem.Instance.sprite2DPlayer);
                 break;
-            case UEnum.EmBattleTeam.emEnemy:
+            case BattleSystem.EmBattleTeam.emEnemy:
                 _bPlayerTeam = false;
 
-                baseCharacter.SetAnim2();
+                SetAnim2();
                 //baseCharacter.SetSprite(BattleSystem.Instance.sprite2DEnemy);
                 break;
         }
 
         _hpSystem = new HPSystem(100);
-        //HpBar 생성.
-        //
-        _hpSystem.onHpChanged += HpSystemEvent;
+        AssetManager.Instance.Instantiate("UIHpBar", traHpBar, (go) =>
+        {
+            _uiHpBar = go.transform.GetComponent<UIHpBar>();
+            _hpSystem.onHpChanged += _uiHpBar.UpdateHpBar;
+        });
 
         Idle();
-    }
-
-    private void HpSystemEvent()
-    {
-        //hpbar 조절.
-        //
     }
 
     private void Idle()
     {
         if (_bPlayerTeam)
-            baseCharacter.PlayAnim_Idle(new Vector3(1, 0));
+            PlayAnim_Idle(new Vector3(1, 0));
         else
-            baseCharacter.PlayAnim_Idle(new Vector3(-1, 0));
+            PlayAnim_Idle(new Vector3(-1, 0));
     }
 
+
+    private Vector3 _vec3TargetPos = Vector3.zero;
+    private Action _onMoveComplete = null;
     private void Move(Vector3 vec3TargetPos, Action onMoveComplete)
     {
         _emState = EmState.emMove;
@@ -114,12 +108,12 @@ public class BattleCharacter : MonoBehaviour
         _onMoveComplete = onMoveComplete;
 
         if (vec3TargetPos.x > 0)
-            baseCharacter.PlayAnim_MoveRight();
+            PlayAnim_MoveRight();
         else
-            baseCharacter.PlayAnim_MoveLeft();
+            PlayAnim_MoveLeft();
     }
 
-    public void Attack(BattleCharacter target, Action onAttackComplete)
+    public void TakeTurn(BattleCharacter target, Action onAttackComplete)
     {
         Vector3 vec3TargetPos = target.GetPosition() + (GetPosition() - target.GetPosition()).normalized * 10.0f;
         Vector3 vec3StartPos = GetPosition();
@@ -131,7 +125,7 @@ public class BattleCharacter : MonoBehaviour
 
             //target위치 도착.target 공격.
             Vector3 vec3Dir = (target.GetPosition() - GetPosition()).normalized;
-            baseCharacter.PlayAnim_Attack(vec3Dir, () =>
+            PlayAnim_Attack(vec3Dir, () =>
             {
                 //target 때리기.
                 int nDamage = UnityEngine.Random.Range(20, 50);
@@ -143,7 +137,7 @@ public class BattleCharacter : MonoBehaviour
                 {
                     //origin 위치 도착.Idle 상태로 돌아옴.
                     _emState = EmState.emIdle;
-                    baseCharacter.PlayAnim_Idle(vec3Dir);
+                    PlayAnim_Idle(vec3Dir);
                     onAttackComplete?.Invoke();
                 });
             });
@@ -153,7 +147,7 @@ public class BattleCharacter : MonoBehaviour
     public void Damage(BattleCharacter attacker, int nDamage)
     {
         _hpSystem.Damage(nDamage);
-        Debug.Log($"Hp: {_hpSystem.GetHp()} / Position: {GetPosition()}");
+        Debug.Log($"{this}'s Hp: {_hpSystem.GetHp()} / Position: {GetPosition()}");
 
         Vector3 vec3Dir = (GetPosition() - attacker.GetPosition()).normalized;
 
@@ -161,14 +155,19 @@ public class BattleCharacter : MonoBehaviour
         //
 
         //damage value text color setting.
-        baseCharacter.SetColor(Color.red);
+        SetColor(Color.red);
 
         //blood setting.
         //BloodHandler.SpawnBlood(GetPosition(), vec3Dir);
 
         if (_hpSystem.IsDead())
         {
-            baseCharacter.PlayAnim_Die();
+            PlayAnim_Die();
         }
+    }
+
+    public bool IsDead()
+    {
+        return _hpSystem.IsDead();
     }
 }

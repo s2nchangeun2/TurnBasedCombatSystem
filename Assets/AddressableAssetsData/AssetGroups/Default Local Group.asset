@@ -25,6 +25,10 @@ MonoBehaviour:
     m_Address: Enemy
     m_ReadOnly: 0
     m_SerializedLabels: []
+  - m_GUID: dae5b1e2feb341044bd8afb221bf781a
+    m_Address: UIHpBar
+    m_ReadOnly: 0
+    m_SerializedLabels: []
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 19fc8a0c97ed1b849aab193ea0b6c84e, type: 2}
   m_SchemaSet:
