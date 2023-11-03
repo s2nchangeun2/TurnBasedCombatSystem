@@ -24,7 +24,7 @@ public class HPSystem
         if (_nHp < 0)
             _nHp = 0;
 
-        onHpChanged?.Invoke((float)_nHp / (float)_nMaxHp);
+        onHpChanged?.Invoke(_nHp / (float)_nMaxHp);
 
         if (_nHp <= 0)
             Die();

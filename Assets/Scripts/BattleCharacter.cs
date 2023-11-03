@@ -19,9 +19,11 @@ public class BattleCharacter : BaseCharacter
     private EmState _emState = default;
 
     private HPSystem _hpSystem = null;
-    private UIHpBar _uiHpBar = null;
 
     private bool _bPlayerTeam = false;
+
+    private const string _C_STR_UIHPBAR = "UIHpBar";
+    private const string _C_STR_UIDAMAGE = "UIDamage";
 
     private void Awake()
     {
@@ -34,19 +36,13 @@ public class BattleCharacter : BaseCharacter
         switch (_emState)
         {
             case EmState.emIdle:
+                UpdateIdle();
                 break;
             case EmState.emMove:
-                float fMoveSpeed = 10.0f;
-                transform.position += (_vec3TargetPos - GetPosition()) * fMoveSpeed * Time.deltaTime;
-
-                float fDestination = 1.0f;
-                if (Vector3.Distance(GetPosition(), _vec3TargetPos) < fDestination)
-                {
-                    transform.position = _vec3TargetPos;
-                    _onMoveComplete?.Invoke();
-                }
+                UpdateMove();
                 break;
             case EmState.emAttack:
+                UpdateAttack();
                 break;
         }
     }
@@ -66,51 +62,42 @@ public class BattleCharacter : BaseCharacter
         switch (emTeam)
         {
             case BattleSystem.EmBattleTeam.emPlayer:
-                _bPlayerTeam = true;
-
-                SetAnim1();
-                //baseCharacter.SetSprite(BattleSystem.Instance.sprite2DPlayer);
+                _bPlayerTeam = true;                
+                SetSprite(0); //temp..
                 break;
             case BattleSystem.EmBattleTeam.emEnemy:
                 _bPlayerTeam = false;
-
-                SetAnim2();
-                //baseCharacter.SetSprite(BattleSystem.Instance.sprite2DEnemy);
+                //SetSprite(0); //temp..
                 break;
         }
 
         _hpSystem = new HPSystem(100);
-        AssetManager.Instance.Instantiate("UIHpBar", traHpBar, (go) =>
+        //hp bar 띄우기.
+        AssetManager.Instance.Instantiate(_C_STR_UIHPBAR, traHpBar, (go) =>
         {
-            _uiHpBar = go.transform.GetComponent<UIHpBar>();
+            UIHpBar _uiHpBar = go.transform.GetComponent<UIHpBar>();
             _hpSystem.onHpChanged += _uiHpBar.UpdateHpBar;
         });
-
-        Idle();
     }
 
-    private void Idle()
+    private void UpdateIdle()
     {
-        if (_bPlayerTeam)
-            PlayAnim_Idle(new Vector3(1, 0));
-        else
-            PlayAnim_Idle(new Vector3(-1, 0));
+        SetIdle(Vector3.one);
     }
 
-
-    private Vector3 _vec3TargetPos = Vector3.zero;
-    private Action _onMoveComplete = null;
-    private void Move(Vector3 vec3TargetPos, Action onMoveComplete)
+    private void UpdateMove()
     {
-        _emState = EmState.emMove;
+        transform.position += (_vec3TargetPos - GetPosition()) * _C_F_MOVESPEED * Time.deltaTime;
 
-        _vec3TargetPos = vec3TargetPos;
-        _onMoveComplete = onMoveComplete;
+        if (Vector3.Distance(GetPosition(), _vec3TargetPos) < 1.0f)
+        {
+            transform.position = _vec3TargetPos;
+            _onMoveComplete?.Invoke();
+        }
+    }
 
-        if (vec3TargetPos.x > 0)
-            PlayAnim_MoveRight();
-        else
-            PlayAnim_MoveLeft();
+    private void UpdateAttack()
+    {
     }
 
     public void TakeTurn(BattleCharacter target, Action onAttackComplete)
@@ -123,46 +110,58 @@ public class BattleCharacter : BaseCharacter
         {
             _emState = EmState.emAttack;
 
-            //target위치 도착.target 공격.
+            //target위치 도착.
             Vector3 vec3Dir = (target.GetPosition() - GetPosition()).normalized;
-            PlayAnim_Attack(vec3Dir, () =>
+            SetAttack(vec3Dir, () =>
             {
-                //target 때리기.
+                //target 공격.
                 int nDamage = UnityEngine.Random.Range(20, 50);
                 target.Damage(this, nDamage);
             }, () =>
             {
-                //공격 완료.origin 위치로 돌아옴.
+                //공격 완료.
                 Move(vec3StartPos, () =>
                 {
-                    //origin 위치 도착.Idle 상태로 돌아옴.
+                    //origin 위치 도착.
                     _emState = EmState.emIdle;
-                    PlayAnim_Idle(vec3Dir);
+                    SetIdle(vec3Dir);
                     onAttackComplete?.Invoke();
                 });
             });
         });
     }
 
+    private Vector3 _vec3TargetPos = Vector3.zero;
+    private Action _onMoveComplete = null;
+    private void Move(Vector3 vec3TargetPos, Action onMoveComplete)
+    {
+        _emState = EmState.emMove;
+
+        _vec3TargetPos = vec3TargetPos;
+        _onMoveComplete = onMoveComplete;
+
+        if (vec3TargetPos.x > 0)
+            SetMoveToRight();
+        else
+            SetMoveToLeft();
+    }
+
     public void Damage(BattleCharacter attacker, int nDamage)
     {
         _hpSystem.Damage(nDamage);
+
         Debug.Log($"{this}'s Hp: {_hpSystem.GetHp()} / Position: {GetPosition()}");
 
-        Vector3 vec3Dir = (GetPosition() - attacker.GetPosition()).normalized;
-
         //damage value를 UI로 띄우기.
-        //
-
-        //damage value text color setting.
-        SetColor(Color.red);
-
-        //blood setting.
-        //BloodHandler.SpawnBlood(GetPosition(), vec3Dir);
-
-        if (_hpSystem.IsDead())
+        AssetManager.Instance.Instantiate(_C_STR_UIDAMAGE, transform, (go) =>
         {
-            PlayAnim_Die();
+            UIDamage uiDamage = go.transform.GetComponent<UIDamage>();
+            uiDamage.SetDamage(nDamage);
+        });
+
+        if (IsDead())
+        {
+            SetDie();
         }
     }
 

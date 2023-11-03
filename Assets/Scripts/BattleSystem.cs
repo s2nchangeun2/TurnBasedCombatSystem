@@ -75,7 +75,7 @@ public class BattleSystem : MonoBehaviour
         switch (emTeam)
         {
             case EmBattleTeam.emPlayer:
-                strTeam = "Player";
+                strTeam = "Player";                
                 traPos = traPlayerPos;
                 break;
             case EmBattleTeam.emEnemy:
@@ -165,7 +165,7 @@ public class BattleSystem : MonoBehaviour
         {
             int nMin = Mathf.FloorToInt(_fBattleTimer / 60);
             int nSec = Mathf.FloorToInt(_fBattleTimer % 60);
-            textTimer.text = string.Format("{0:00}:{1:00}", nMin, nSec);
+            textTimer.SetText(string.Format("{0:00}:{1:00}", nMin, nSec));
 
             _fBattleTimer -= Time.deltaTime;
 

@@ -7,48 +7,58 @@ public class BaseCharacter : MonoBehaviour
     [SerializeField]
     private Image imageCharacter = null;
 
-    public void SetSprite(Sprite sprite)
+    [SerializeField]
+    private Animator animator = null;
+
+    private const string _C_STR_CHARACTER = "Character";
+    protected const float _C_F_MOVESPEED = 10.0f;
+
+    public void SetSprite(int nID)
     {
-        imageCharacter.sprite = sprite;
+        string strName = string.Format("{0}{1}", _C_STR_CHARACTER, nID);
+        AssetManager.Instance.LoadAssetAsync<Sprite>(strName, (sprite) => imageCharacter.sprite = sprite);
     }
 
-    public void SetColor(Color color) { }
-
-    public void SetAnim1() { }
-    public void SetAnim2() { }
-
-    public void PlayAnim_Attack(Vector3 vec3Dir, Action onHit, Action onComplete)
+    public void SetIdle(Vector3 vec3Dir)
     {
-        //계산된 각도 사용하여 위치 이동.
-        float nAngle = GetAngleFromVector(vec3Dir);
-        transform.rotation = Quaternion.Euler(new Vector3(0, 0, nAngle));
+        //animator.Play("Idle");
+    }
 
-        //애니메이션 사용.
+    public void SetMoveToRight() { }
+    public void SetMoveToLeft() { }
+    public void SetDie() { }
+
+    /// <summary>   
+    /// </summary>
+    /// <param name="vec3Dir"></param>
+    /// <param name="onHit">공격중</param>
+    /// <param name="onComplete">공격완료</param>
+    public void SetAttack(Vector3 vec3Dir, Action onHit, Action onComplete)
+    {
+        //GetAngleFromVector3(vec3Dir, out int nAngle);
+        //SetSprite(nAngle);
+
+        //animation.
         //
 
         onHit?.Invoke();
         onComplete?.Invoke();
     }
 
-    public void PlayAnim_Idle(Vector3 vec3Pos) { }
-    public void PlayAnim_MoveRight() { }
-    public void PlayAnim_MoveLeft() { }
-    public void PlayAnim_Die() { }
-
     /// <summary>
-    /// 좌표평면에서 수평출으로부터 한 점까지의 각도.
+    /// 좌표평면에서 수평축으로부터 한 점까지의 각도.
     /// </summary>
     /// <param name="vec3Dir"></param>
     /// <returns></returns>
-    public float GetAngleFromVector(Vector3 vec3Dir)
+    public void GetAngleFromVector3(Vector3 vec3Dir, out int nAngle)
     {
-        if (vec3Dir.x == 0f && vec3Dir.y == 0f) vec3Dir = new Vector2(0, -1);
+        if (vec3Dir.x == 0f && vec3Dir.y == 0f)
+            vec3Dir = new Vector2(0, -1);
 
         double n = Math.Atan2(vec3Dir.y, vec3Dir.x) * Mathf.Rad2Deg;
-        if (n < 0) n += 360;
-        //int angle = (int)Math.Round(n / 45);
-        float angle = (float)n / 45;
+        if (n < 0)
+            n += 360;
 
-        return angle;
+        nAngle = (int)Math.Round((float)n / 45);
     }
 }
