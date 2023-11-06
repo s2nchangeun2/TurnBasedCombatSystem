@@ -4,29 +4,67 @@ using UnityEngine.UI;
 
 public class BaseCharacter : MonoBehaviour
 {
+    public enum EmDirection
+    {
+        emUnknown,
+        emLeft,
+        emRight
+    }
+
     [SerializeField]
     private Image imageCharacter = null;
 
     [SerializeField]
     private Animator animator = null;
 
-    private const string _C_STR_CHARACTER = "Character";
-    protected const float _C_F_MOVESPEED = 10.0f;
+    [SerializeField]
+    private EmDirection _emDirection = EmDirection.emUnknown;
 
-    public void SetSprite(int nID)
+    protected const float _C_F_MOVESPEED = 6.0f;
+
+    private float _fDirection = 0f;
+
+    private void Awake()
     {
-        string strName = string.Format("{0}{1}", _C_STR_CHARACTER, nID);
-        AssetManager.Instance.LoadAssetAsync<Sprite>(strName, (sprite) => imageCharacter.sprite = sprite);
+        SetDirection(_emDirection);
     }
 
-    public void SetIdle(Vector3 vec3Dir)
+    public void SetDirection(EmDirection emDirection)
     {
-        //animator.Play("Idle");
+        _fDirection = _emDirection == EmDirection.emLeft ? -1.0f : 1.0f;
+        imageCharacter.transform.localScale = new Vector3(_fDirection, 1.0f, 1.0f);
     }
 
-    public void SetMoveToRight() { }
-    public void SetMoveToLeft() { }
-    public void SetDie() { }
+    private void ChangeDirection()
+    {
+        _fDirection *= -1.0f;
+    }
+
+    public void SetIdle()
+    {
+        animator.Play("Idle");
+    }
+
+    public void SetMoveToRight(bool bAcitve)
+    {
+        animator.SetBool("Move", bAcitve);
+    }
+
+    public void SetMoveToLeft(bool bActive)
+    {
+        ChangeDirection();
+        animator.SetBool("Move", bActive);
+    }
+
+    public void SetDie()
+    {
+        animator.SetBool("Die", true);
+    }
+
+    public void SetAttack(bool bActive)
+    {
+        animator.SetBool("Attack", bActive);
+    }
 
     /// <summary>   
     /// </summary>
@@ -35,12 +73,6 @@ public class BaseCharacter : MonoBehaviour
     /// <param name="onComplete">공격완료</param>
     public void SetAttack(Vector3 vec3Dir, Action onHit, Action onComplete)
     {
-        //GetAngleFromVector3(vec3Dir, out int nAngle);
-        //SetSprite(nAngle);
-
-        //animation.
-        //
-
         onHit?.Invoke();
         onComplete?.Invoke();
     }

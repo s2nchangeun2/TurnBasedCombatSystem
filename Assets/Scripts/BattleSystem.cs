@@ -75,7 +75,7 @@ public class BattleSystem : MonoBehaviour
         switch (emTeam)
         {
             case EmBattleTeam.emPlayer:
-                strTeam = "Player";                
+                strTeam = "Player";
                 traPos = traPlayerPos;
                 break;
             case EmBattleTeam.emEnemy:
@@ -100,6 +100,10 @@ public class BattleSystem : MonoBehaviour
 
     private IEnumerator BattleLoopCoroutine()
     {
+        //등장 효과 추가.
+        //
+        yield return YieldInstructionCache.WaitForSeconds(2.0f);
+
         //Spawn 후 Setting 완료될 때까지 대기.
         while (!_bSetting)
         {
@@ -200,7 +204,7 @@ public class BattleSystem : MonoBehaviour
 
         if (IsTimeOver())
         {
-            Debug.Log("Timer is Over!! Player Lose!!");
+            Debug.Log("Timer is Over!! Player Lose!!");            
             return true;
         }
 

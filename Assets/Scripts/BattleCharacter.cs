@@ -8,6 +8,7 @@ public class BattleCharacter : BaseCharacter
         emIdle,
         emMove,
         emAttack,
+        emDie,
     }
 
     [SerializeField]
@@ -25,7 +26,7 @@ public class BattleCharacter : BaseCharacter
     private const string _C_STR_UIHPBAR = "UIHpBar";
     private const string _C_STR_UIDAMAGE = "UIDamage";
 
-    private void Awake()
+    private void Start()
     {
         SetActiveSelection(false);
         _emState = EmState.emIdle;
@@ -43,6 +44,9 @@ public class BattleCharacter : BaseCharacter
                 break;
             case EmState.emAttack:
                 UpdateAttack();
+                break;
+            case EmState.emDie:
+                UpdateDie();
                 break;
         }
     }
@@ -62,12 +66,10 @@ public class BattleCharacter : BaseCharacter
         switch (emTeam)
         {
             case BattleSystem.EmBattleTeam.emPlayer:
-                _bPlayerTeam = true;                
-                SetSprite(0); //temp..
+                _bPlayerTeam = true;
                 break;
             case BattleSystem.EmBattleTeam.emEnemy:
                 _bPlayerTeam = false;
-                //SetSprite(0); //temp..
                 break;
         }
 
@@ -82,15 +84,22 @@ public class BattleCharacter : BaseCharacter
 
     private void UpdateIdle()
     {
-        SetIdle(Vector3.one);
+        SetIdle();
     }
 
     private void UpdateMove()
     {
+        bool bRightDir = _vec3TargetPos.x > 0;
+        if (bRightDir) SetMoveToRight(true);
+        else SetMoveToLeft(true);
+
         transform.position += (_vec3TargetPos - GetPosition()) * _C_F_MOVESPEED * Time.deltaTime;
 
         if (Vector3.Distance(GetPosition(), _vec3TargetPos) < 1.0f)
         {
+            if (bRightDir) SetMoveToRight(false);
+            else SetMoveToLeft(false);
+
             transform.position = _vec3TargetPos;
             _onMoveComplete?.Invoke();
         }
@@ -98,6 +107,12 @@ public class BattleCharacter : BaseCharacter
 
     private void UpdateAttack()
     {
+        SetAttack(true);
+    }
+
+    private void UpdateDie()
+    {
+        SetDie();
     }
 
     public void TakeTurn(BattleCharacter target, Action onAttackComplete)
@@ -117,6 +132,7 @@ public class BattleCharacter : BaseCharacter
                 //target 공격.
                 int nDamage = UnityEngine.Random.Range(20, 50);
                 target.Damage(this, nDamage);
+
             }, () =>
             {
                 //공격 완료.
@@ -124,7 +140,6 @@ public class BattleCharacter : BaseCharacter
                 {
                     //origin 위치 도착.
                     _emState = EmState.emIdle;
-                    SetIdle(vec3Dir);
                     onAttackComplete?.Invoke();
                 });
             });
@@ -139,11 +154,6 @@ public class BattleCharacter : BaseCharacter
 
         _vec3TargetPos = vec3TargetPos;
         _onMoveComplete = onMoveComplete;
-
-        if (vec3TargetPos.x > 0)
-            SetMoveToRight();
-        else
-            SetMoveToLeft();
     }
 
     public void Damage(BattleCharacter attacker, int nDamage)
@@ -161,7 +171,7 @@ public class BattleCharacter : BaseCharacter
 
         if (IsDead())
         {
-            SetDie();
+            _emState = EmState.emDie;
         }
     }
 

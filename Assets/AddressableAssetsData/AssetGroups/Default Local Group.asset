@@ -33,10 +33,6 @@ MonoBehaviour:
     m_Address: UIDamage
     m_ReadOnly: 0
     m_SerializedLabels: []
-  - m_GUID: f27901b6b98dc07429dd85d01e35b4ef
-    m_Address: Character0
-    m_ReadOnly: 0
-    m_SerializedLabels: []
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 19fc8a0c97ed1b849aab193ea0b6c84e, type: 2}
   m_SchemaSet:
