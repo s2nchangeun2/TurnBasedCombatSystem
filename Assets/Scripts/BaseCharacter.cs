@@ -20,22 +20,17 @@ public class BaseCharacter : MonoBehaviour
     [SerializeField]
     private EmDirection _emDirection = EmDirection.emUnknown;
 
-    protected const float _C_F_MOVESPEED = 6.0f;
+    protected const float _C_F_MOVESPEED = 5.0f;
 
     private float _fDirection = 0f;
 
     private void Awake()
     {
-        SetDirection(_emDirection);
-    }
-
-    public void SetDirection(EmDirection emDirection)
-    {
         _fDirection = _emDirection == EmDirection.emLeft ? -1.0f : 1.0f;
         imageCharacter.transform.localScale = new Vector3(_fDirection, 1.0f, 1.0f);
     }
 
-    private void ChangeDirection()
+    public void ChangeDirection()
     {
         _fDirection *= -1.0f;
     }
@@ -56,25 +51,20 @@ public class BaseCharacter : MonoBehaviour
         animator.SetBool("Move", bActive);
     }
 
+    public void SetAttack(Action onComplete = null)
+    {
+        animator.Play("Attack");
+
+        AnimatorStateInfo animatorStateInfo = animator.GetCurrentAnimatorStateInfo(0);
+        if (animatorStateInfo.normalizedTime >= 1.0f)
+        {
+            onComplete?.Invoke();
+        }
+    }
+
     public void SetDie()
     {
-        animator.SetBool("Die", true);
-    }
-
-    public void SetAttack(bool bActive)
-    {
-        animator.SetBool("Attack", bActive);
-    }
-
-    /// <summary>   
-    /// </summary>
-    /// <param name="vec3Dir"></param>
-    /// <param name="onHit">공격중</param>
-    /// <param name="onComplete">공격완료</param>
-    public void SetAttack(Vector3 vec3Dir, Action onHit, Action onComplete)
-    {
-        onHit?.Invoke();
-        onComplete?.Invoke();
+        animator.Play("Die");
     }
 
     /// <summary>

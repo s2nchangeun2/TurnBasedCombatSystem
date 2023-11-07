@@ -27,10 +27,6 @@ public class BattleSystem : MonoBehaviour
 
     [SerializeField]
     public TextMeshProUGUI textTimer = null;
-
-    //추후 수정(데이터를 받아오는 것으로).    
-    public Sprite sprite2DPlayer = null;
-    public Sprite sprite2DEnemy = null;
     #endregion
 
     private EmBattleTurn _emBattleState = EmBattleTurn.emUnknown;
@@ -204,7 +200,7 @@ public class BattleSystem : MonoBehaviour
 
         if (IsTimeOver())
         {
-            Debug.Log("Timer is Over!! Player Lose!!");            
+            Debug.Log("Timer is Over!! Player Lose!!");
             return true;
         }
 

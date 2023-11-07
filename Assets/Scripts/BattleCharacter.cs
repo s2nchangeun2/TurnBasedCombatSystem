@@ -95,7 +95,7 @@ public class BattleCharacter : BaseCharacter
 
         transform.position += (_vec3TargetPos - GetPosition()) * _C_F_MOVESPEED * Time.deltaTime;
 
-        if (Vector3.Distance(GetPosition(), _vec3TargetPos) < 1.0f)
+        if (Vector3.Distance(GetPosition(), _vec3TargetPos) < 30.0f)
         {
             if (bRightDir) SetMoveToRight(false);
             else SetMoveToLeft(false);
@@ -107,7 +107,10 @@ public class BattleCharacter : BaseCharacter
 
     private void UpdateAttack()
     {
-        SetAttack(true);
+        SetAttack(() =>
+        {
+            _onComplete?.Invoke();
+        });
     }
 
     private void UpdateDie()
@@ -123,17 +126,9 @@ public class BattleCharacter : BaseCharacter
         //target위치까지 이동.
         Move(vec3TargetPos, () =>
         {
-            _emState = EmState.emAttack;
-
-            //target위치 도착.
-            Vector3 vec3Dir = (target.GetPosition() - GetPosition()).normalized;
-            SetAttack(vec3Dir, () =>
-            {
-                //target 공격.
-                int nDamage = UnityEngine.Random.Range(20, 50);
-                target.Damage(this, nDamage);
-
-            }, () =>
+            //target 위치 도착.
+            //target 공격.
+            Attack(target, () =>
             {
                 //공격 완료.
                 Move(vec3StartPos, () =>
@@ -154,6 +149,17 @@ public class BattleCharacter : BaseCharacter
 
         _vec3TargetPos = vec3TargetPos;
         _onMoveComplete = onMoveComplete;
+    }
+
+    private Action _onComplete = null;
+    private void Attack(BattleCharacter target, Action onComplete)
+    {
+        _emState = EmState.emAttack;
+
+        int nDamage = UnityEngine.Random.Range(20, 50);
+        target.Damage(this, nDamage);
+
+        _onComplete = onComplete;
     }
 
     public void Damage(BattleCharacter attacker, int nDamage)
