@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 
@@ -212,3 +213,67 @@ public class BattleSystem : MonoBehaviour
         return _fBattleTimer <= 0;
     }
 }
+
+#region #2.
+//public class BattleSystem2 : MonoBehaviour
+//{
+//    private List<BattleCharacter> _listPlayerParty = new List<BattleCharacter>();
+//    private List<BattleCharacter> _listEnemyParty = new List<BattleCharacter>();
+
+//    private bool _bPlayerTurn = true;
+//    private int _nCurPlayerIndex = 0;
+//    private int _nCurEnemyIndex = 0;
+
+//    private bool IsBattleOver()
+//    {
+//        //player party 또는 enemy party의 모든 캐릭터의 체력이 0이하인 경우.
+
+//        return false;
+//    }
+
+//    private void Awake()
+//    {
+//        //_listPlayerParty, _listEnemyParty에 캐릭터 추가.
+//        //
+//    }
+
+//    private void Update()
+//    {
+//        if (!IsBattleOver())
+//        {
+//            if (_bPlayerTurn)
+//            {
+//                if (_nCurPlayerIndex < _listPlayerParty.Count)
+//                {
+//                    //적에게 데미지 적용. 
+//                    //
+//                }
+//                _nCurPlayerIndex++;
+//                if (_nCurPlayerIndex >= _listPlayerParty.Count)
+//                {
+//                    _nCurPlayerIndex = 0;
+//                    _bPlayerTurn = false;
+//                }
+//            }
+//            else
+//            {
+//                if (_nCurEnemyIndex <= _listEnemyParty.Count)
+//                {
+//                    //player damage.
+//                    //
+//                }
+//                _nCurEnemyIndex++;
+//                if (_nCurEnemyIndex >= _listEnemyParty.Count)
+//                {
+//                    _nCurEnemyIndex = 0;
+//                    _bPlayerTurn = true;
+//                }
+//            }
+//        }
+//        else
+//        {
+//            //승리 or패배.
+//        }
+//    }
+//} 
+#endregion
