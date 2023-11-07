@@ -10,3 +10,5 @@ You Can Change Character's Count(Team Party Set Up) and Add additional function.
 Animator System
 
 State Machine
+
+Timer
